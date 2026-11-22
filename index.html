@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Study notes page: how far this design scales</title>
+<title>PawConnect </title>
 <style>
 :root{
   --bg:#ffffff; --card:#f5f6f8; --text:#16181d; --muted:#5b6270; --faint:#8a909c; --line:#dfe2e8;
-  --accent:#2f6fed; --ok:#1f9d55; --warn:#c77d0a; --info:#2f6fed;
+  --accent:#2f6fed; --ok:#1f9d55; --warn:#c77d0a;
   --ok-bg:rgba(31,157,85,.10); --warn-bg:rgba(199,125,10,.12); --info-bg:rgba(47,111,237,.10);
   --font:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
@@ -16,26 +16,27 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#111318; --card:#1a1d24; --text:#eceef2; --muted:#a3a9b6; --faint:#7b8190; --line:#2a2e38;
-    --accent:#6d9bff; --ok:#46c27d; --warn:#e6a23c; --info:#6d9bff;
+    --accent:#6d9bff; --ok:#46c27d; --warn:#e6a23c;
     --ok-bg:rgba(70,194,125,.12); --warn-bg:rgba(230,162,60,.13); --info-bg:rgba(109,155,255,.12);
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#111318; --card:#1a1d24; --text:#eceef2; --muted:#a3a9b6; --faint:#7b8190; --line:#2a2e38;
-  --accent:#6d9bff; --ok:#46c27d; --warn:#e6a23c; --info:#6d9bff;
+  --accent:#6d9bff; --ok:#46c27d; --warn:#e6a23c;
   --ok-bg:rgba(70,194,125,.12); --warn-bg:rgba(230,162,60,.13); --info-bg:rgba(109,155,255,.12);
   color-scheme:dark;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.6;font-size:16px}
-main{max-width:920px;margin:0 auto;padding:40px 20px 64px;display:flex;flex-direction:column;gap:28px}
+main{max-width:940px;margin:0 auto;padding:40px 20px 64px;display:flex;flex-direction:column;gap:30px}
 h1{font-size:28px;line-height:1.25;letter-spacing:-.3px}
-h2{font-size:20px;margin-bottom:4px}
+h2{font-size:20px;margin-bottom:2px}
 h3{font-size:16px;margin-bottom:4px}
 .muted{color:var(--muted)} .small{font-size:13px} .faint{color:var(--faint)}
 code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;background:var(--card);padding:1px 6px;border-radius:5px}
+a{color:var(--accent)}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
 .stat b{display:block;font-size:26px;letter-spacing:-.5px}
@@ -45,15 +46,17 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;background:var(-
 .callout strong{display:block;margin-bottom:4px}
 .chart{overflow-x:auto;margin-top:12px}
 .chart svg{display:block;width:100%;min-width:520px;height:auto}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 .axis text{fill:var(--faint);font-size:11px;font-family:var(--font)}
 .grid line{stroke:var(--line);stroke-width:1}
 .ref text{font-size:11px;font-family:var(--font)}
 .tablewrap{overflow-x:auto;margin-top:8px}
-table{width:100%;border-collapse:collapse;font-size:14px;min-width:640px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
 th{text-align:left;font-weight:600;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line)}
-td{padding:12px;vertical-align:top;border-bottom:1px solid var(--line)}
-tr.ok td{background:var(--ok-bg)} tr.warn td{background:var(--warn-bg)} tr.info td{background:var(--info-bg)}
+td{padding:11px 12px;vertical-align:top;border-bottom:1px solid var(--line)}
 td:first-child{font-weight:600}
+tr.ok td{background:var(--ok-bg)} tr.warn td{background:var(--warn-bg)} tr.info td{background:var(--info-bg)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
 .card h3{margin-bottom:8px}
 .card p+p{margin-top:8px}
@@ -65,125 +68,234 @@ section{display:flex;flex-direction:column;gap:6px}
 <main>
 
 <header>
-  <h1>Study notes page: how far this design scales</h1>
-  <p class="muted" style="margin-top:8px">Current path: one JSON GET for a branch, then every <code>link.study_notes</code> item becomes a card in the browser. There is no pagination or virtual list. Graphs are modeled from that architecture, not from a load test.</p>
+  <h1>PawConnect scalability on our own server</h1>
+  <p class="muted" style="margin-top:8px">How many people one self-hosted PawConnect server can serve, and what limits it first. We assume one machine of our own running Nginx, Gunicorn, Django and PostgreSQL. Every number below is modeled from the assumptions in the first table. None of it comes from a load test, and the Paw AI limits depend on a typical AI call time that you should measure on the real system.</p>
 </header>
 
-<div class="stats">
-  <div class="stat ok"><b>~200</b><span>Comfortable items per branch</span></div>
-  <div class="stat warn"><b>~500</b><span>Starts to feel slow</span></div>
-  <div class="stat"><b>15/min</b><span>Anon throttle (this endpoint)</span></div>
-  <div class="stat"><b>241 B</b><span>Live payload at 1 note</span></div>
-</div>
+<div class="stats" id="stats"></div>
 
 <div class="callout">
-  <strong>Campus size is well inside the green zone</strong>
-  A polytechnic catalog of Drive folders (about 6 semesters × a handful of folders per branch) stays under ~50 items. Listing every PDF in those folders (~100–250 per branch) is still fine. The current page only becomes the bottleneck if you flatten a whole Drive tree into this JSON.
+  <strong>The limit is the AI wait, not the page loads</strong>
+  A normal page takes a worker a few tens of milliseconds. A Paw AI question holds a worker for the whole wait on the outside AI service, several seconds. So the number of students asking Paw AI at the same moment, not the number of people browsing, is the first thing to run out.
 </div>
 
 <section>
-  <h2>JSON payload vs items on one branch page</h2>
-  <p class="small faint">Source: scaled from the live 241-byte response at 1 item (~240 bytes per extra file once the wrapper is amortized). Units: items on X, kilobytes on Y.</p>
-  <div class="chart" id="lineChart"></div>
+  <h2>Assumptions behind every number</h2>
+  <p class="small faint">Change these in the script at the bottom of the page and every table and graph here updates.</p>
+  <div class="tablewrap"><table id="assume"></table></div>
 </section>
 
 <section>
-  <h2>Modeled time to show cards after the JSON returns</h2>
-  <p class="small faint">Source: order-of-magnitude model for parse + DOM cards on a typical laptop (local Django, no CDN). Not measured. Units: item count on X, milliseconds on Y.</p>
-  <div class="chart" id="barChart"></div>
+  <h2>1. People browsing at the same time</h2>
+  <p class="small faint">Modeled from the page time and CPU target in the assumptions. Units: server size on X, people active at the same moment on Y.</p>
+  <div class="chart" id="cBrowse"></div>
 </section>
 
 <section>
-  <h2>What actually limits scale</h2>
+  <h2>2. People using Paw AI at the same time</h2>
+  <p class="small faint">Each question blocks one Gunicorn worker until the AI answers. Threads let one worker wait on several answers at once. Units: server size on X, students asking Paw AI at the same moment on Y.</p>
+  <div class="chart" id="cAI"></div>
+  <div class="legend" id="lAI"></div>
+</section>
+
+<section>
+  <h2>3. Page response time as load grows</h2>
+  <p class="small faint">Simple queue model: response time = page time ÷ (1 − CPU use). Lines that hit the top are saturated, meaning requests queue up and the real wait keeps growing. Units: requests per second on X, milliseconds on Y.</p>
+  <div class="chart" id="cLoad"></div>
+  <div class="legend" id="lLoad"></div>
+</section>
+
+<section>
+  <h2>4. Database growth</h2>
+  <p class="small faint">Paw AI history is the main thing that grows. Units: enrolled students on X, megabytes of new data in one semester on Y.</p>
+  <div class="chart" id="cDb"></div>
+</section>
+
+<section>
+  <h2>What each server size gives us</h2>
+  <div class="tablewrap"><table id="tiers"></table></div>
+</section>
+
+<section>
+  <h2>Which server fits how many students</h2>
+  <p class="small faint">Peak use is the share of enrolled students active at the busiest moment. Replace the student counts with your real numbers.</p>
+  <div class="tablewrap"><table id="fit"></table></div>
+</section>
+
+<section>
+  <h2>Limits that do not depend on the server</h2>
   <div class="tablewrap">
   <table>
-    <thead><tr><th>Layer</th><th>What you have now</th><th>Comfortable</th><th>Breaks when</th></tr></thead>
+    <thead><tr><th>Limit</th><th>Number</th><th>What it means for PawConnect</th></tr></thead>
     <tbody>
-      <tr class="ok"><td>API payload</td><td>All rows for one <code>branch_id</code>, no pagination</td><td>Up to ~200 files (~50 KB)</td><td>Thousands of files in one GET (~0.5–1+ MB)</td></tr>
-      <tr class="ok"><td>Browser DOM</td><td>One card, chips, preview iframe per file</td><td>~200 cards</td><td>500+ cards; search still walks every item</td></tr>
-      <tr class="warn"><td>JSONField <code>link</code></td><td>Nested dict of arrays on <code>StudyHandNote</code></td><td>Tens to low hundreds of URLs per semester</td><td>Huge blobs (thousands of files) in one row</td></tr>
-      <tr class="warn"><td>Throttle</td><td><code>ResourceThrottle</code> = 15 requests / minute / IP</td><td>Normal browsing (HTML + JSON = 2 hits per visit)</td><td>Shared NAT, scrapers, or a public traffic spike</td></tr>
-      <tr class="info"><td>Campus catalog</td><td>Departments × 6 semesters × Drive folders</td><td>All GPA branches on this page design</td><td>Treating this endpoint as a full Drive index</td></tr>
+      <tr class="warn"><td>Study notes throttle</td><td>15 requests per minute per IP</td><td>Behind Nginx, make sure the real visitor IP is forwarded (<code>X-Forwarded-For</code>). Otherwise every student may count as one visitor and share the same 15.</td></tr>
+      <tr class="warn"><td>Gmail sending</td><td>500 emails per day (personal account)</td><td>Google lists 500 a day for a personal Gmail account. Welcome emails stop for up to 24 hours once it is passed. Source: <a href="https://support.google.com/mail/answer/22839" target="_blank" rel="noopener">Google Help, Gmail sending limits</a>.</td></tr>
+      <tr class="warn"><td>AI service rate limit</td><td>Set by the AI provider</td><td>Our own server does not change it. Check the requests-per-minute limit on the provider account and compare it with the AI figures above.</td></tr>
+      <tr class="info"><td>Google Drive links</td><td>One card per link</td><td>Folder links stay light. Listing every PDF puts hundreds of cards on one page.</td></tr>
     </tbody>
   </table>
   </div>
 </section>
 
 <section>
-  <h3>If you stay with folders (recommended)</h3>
-  <p>Keep <code>study_notes</code> as a few Drive folders per semester, the way the live record already does. Then this graph stays flat: payload stays under a few kilobytes and first paint stays under ~100 ms even if you add every department.</p>
-</section>
-
-<section>
-  <h3>If you list every file</h3>
-  <p>Split the catalog: paginate the JSON, or virtualize the card grid, and stop stuffing the whole Drive listing into one <code>JSONField</code>. That is the line where this page stops being a campus library and starts being a file browser.</p>
+  <h2>Traffic and storage over time</h2>
+  <div class="tablewrap"><table id="long"></table></div>
 </section>
 
 <div class="card">
+  <h3>The real risk of our own server</h3>
+  <p>Capacity is not the weak point. One machine is. Power cuts, a dead internet line or a failed disk take the whole site down, and there is no second server to take over.</p>
+  <p>Plan for three things: a UPS or a stable power supply, a daily PostgreSQL backup copied to another place (<code>pg_dump</code>), and a short note on how to bring the site back on a new machine.</p>
+</div>
+
+<div class="card">
   <h3>Bottom line</h3>
-  <p>For PawConnect as a campus notes library, this page already scales to the whole polytechnic. It does not scale to “every file Google Drive knows about” without pagination.</p>
-  <p class="small muted">Modeled 22 Nov 2026 from <code>exams/views.py</code> study_note_view, <code>study_note.html</code> client render, and the REST_FRAMEWORK throttle <code>fifteen</code> = 15/minute.</p>
+  <p id="bottom"></p>
+  <p class="small muted">Modeled 22 Nov 2026 from the Django, Gunicorn and PostgreSQL setup in the PawConnect repository. Not measured. Measure real page time and real Paw AI time on the server before relying on the exact figures.</p>
 </div>
 
 </main>
 
 <script>
-const ITEMS = ["1","10","50","100","200","500","1k","2k"];
-const KB = [0.24,2.4,12,24,48,120,240,480];
-const MS = [80,95,160,250,450,950,1900,4200];
-const NS = "http://www.w3.org/2000/svg";
+/* ---------- assumptions: edit here ---------- */
+const M = {
+  pageMs: 40,          // CPU + database time for a normal page
+  cpuTarget: 0.6,      // keep CPU at or below 60% for comfort
+  thinkSec: 15,        // one page request per active person every 15 s
+  aiSec: 5,            // time a Paw AI call holds a worker
+  aiPerUserPerMin: 1,  // each active AI user asks about 1 question a minute
+  threads: 4,          // threads per worker in the threaded setup
+  workerMB: 120,       // memory per Gunicorn worker
+  osMB: 300,           // operating system and Nginx
+  pgShare: 0.25,       // share of RAM given to PostgreSQL
+  peakPct: 0.10,       // share of enrolled students active at the peak
+  aiPct: 0.20,         // share of active people using Paw AI
+  qaKB: 2,             // size of one saved question + answer + feedback
+  qaPerDay: 5,         // saved Paw AI exchanges per student per study day
+  studyDays: 100,      // study days in a semester
+  firstLoadMB: 1.5, returnMB: 0.3, visitsPerMonth: 20,
+  maxConn: 100,        // PostgreSQL default max_connections
+  tiers: [{n:"Small",cpu:1,ram:2},{n:"Medium",cpu:2,ram:4},{n:"Large",cpu:4,ram:8}]
+};
+M.tiers.forEach(t=>{
+  t.workers = 2*t.cpu+1;
+  t.rps = t.cpu * (M.cpuTarget / (M.pageMs/1000));
+  t.browse = Math.round(t.rps * M.thinkSec);
+  t.aiSync = Math.floor(t.workers * 60 / (M.aiSec * M.aiPerUserPerMin));
+  t.aiThr = t.aiSync * M.threads;
+  t.maxStudents = Math.floor(Math.min(t.browse / M.peakPct, t.aiSync / (M.peakPct * M.aiPct)));
+  t.ramUsed = t.workers*M.workerMB + t.ram*1024*M.pgShare + M.osMB;
+  t.ramPct = Math.round(100 * t.ramUsed / (t.ram*1024));
+});
+const mbPerStudent = M.qaKB * M.qaPerDay * M.studyDays / 1000;
+const fmt = n => n.toLocaleString("en-US");
 
-function el(tag, attrs, text){
-  const e = document.createElementNS(NS, tag);
-  for (const k in attrs) e.setAttribute(k, attrs[k]);
-  if (text !== undefined) e.textContent = text;
-  return e;
-}
-
-function draw(target, kind, cats, data, max, ticks, suffix, refs){
-  const W = 640, H = 270, L = 52, R = 14, T = 14, B = 32;
-  const pw = W - L - R, ph = H - T - B;
-  const svg = el("svg", {viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": kind + " chart"});
-  const y = v => T + ph - (v / max) * ph;
-  const step = pw / cats.length;
-  const x = i => L + step * i + step / 2;
-
-  const grid = el("g", {class: "grid"}), axis = el("g", {class: "axis"});
-  for (let i = 0; i <= ticks; i++){
-    const v = (max / ticks) * i;
-    grid.appendChild(el("line", {x1: L, x2: W - R, y1: y(v), y2: y(v)}));
-    axis.appendChild(el("text", {x: L - 8, y: y(v) + 4, "text-anchor": "end"}, Math.round(v)));
-  }
-  cats.forEach((c, i) => axis.appendChild(el("text", {x: x(i), y: H - 10, "text-anchor": "middle"}, c)));
-  svg.append(grid, axis);
-
-  if (kind === "line"){
-    const pts = data.map((v, i) => `${x(i)},${y(v)}`);
-    svg.appendChild(el("polygon", {points: `${x(0)},${y(0)} ${pts.join(" ")} ${x(data.length - 1)},${y(0)}`, fill: "var(--accent)", opacity: ".14"}));
-    svg.appendChild(el("polyline", {points: pts.join(" "), fill: "none", stroke: "var(--accent)", "stroke-width": 2.5, "stroke-linejoin": "round"}));
-    data.forEach((v, i) => svg.appendChild(el("circle", {cx: x(i), cy: y(v), r: 3.5, fill: "var(--accent)"})));
-  } else {
-    const bw = Math.min(40, step * 0.6);
-    data.forEach((v, i) => {
-      svg.appendChild(el("rect", {x: x(i) - bw / 2, y: y(v), width: bw, height: y(0) - y(v), rx: 4, fill: "var(--accent)"}));
-      svg.appendChild(el("text", {x: x(i), y: y(v) - 6, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11, "font-family": "var(--font)"}, v));
+/* ---------- small SVG chart helper ---------- */
+const NS="http://www.w3.org/2000/svg";
+function el(tag,attrs,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!==undefined)e.textContent=text;return e;}
+const COL=["var(--accent)","var(--ok)","var(--warn)"];
+function chart(id,o){
+  const W=640,H=270,L=56,R=14,T=14,B=32,pw=W-L-R,ph=H-T-B;
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":o.label});
+  const y=v=>T+ph-(Math.min(v,o.max)/o.max)*ph, step=pw/o.cats.length, x=i=>L+step*i+step/2;
+  const grid=el("g",{class:"grid"}),axis=el("g",{class:"axis"});
+  for(let i=0;i<=o.ticks;i++){const v=o.max/o.ticks*i;grid.appendChild(el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v)}));axis.appendChild(el("text",{x:L-8,y:y(v)+4,"text-anchor":"end"},fmt(Math.round(v))));}
+  o.cats.forEach((c,i)=>axis.appendChild(el("text",{x:x(i),y:H-10,"text-anchor":"middle"},c)));
+  svg.append(grid,axis);
+  if(o.type==="line"){
+    o.series.forEach((s,k)=>{
+      const pts=s.data.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
+      if(o.fill&&k===0)svg.appendChild(el("polygon",{points:`${x(0)},${y(0)} ${pts} ${x(s.data.length-1)},${y(0)}`,fill:COL[k],opacity:".14"}));
+      svg.appendChild(el("polyline",{points:pts,fill:"none",stroke:COL[k],"stroke-width":2.5,"stroke-linejoin":"round"}));
+      s.data.forEach((v,i)=>svg.appendChild(el("circle",{cx:x(i),cy:y(v),r:3.2,fill:COL[k]})));
     });
+  } else {
+    const n=o.series.length,bw=Math.min(44,step*0.72/n);
+    o.series.forEach((s,k)=>s.data.forEach((v,i)=>{
+      const bx=x(i)-(n*bw)/2+k*bw;
+      svg.appendChild(el("rect",{x:bx+1,y:y(v),width:bw-2,height:y(0)-y(v),rx:4,fill:COL[k]}));
+      svg.appendChild(el("text",{x:bx+bw/2,y:y(v)-6,"text-anchor":"middle",fill:"var(--muted)","font-size":11,"font-family":"var(--font)"},fmt(v)));
+    }));
   }
-
-  refs.forEach(r => {
-    const col = r.tone === "success" ? "var(--ok)" : "var(--warn)";
-    const g = el("g", {class: "ref"});
-    g.appendChild(el("line", {x1: L, x2: W - R, y1: y(r.value), y2: y(r.value), stroke: col, "stroke-width": 1.2, "stroke-dasharray": "5 4"}));
-    g.appendChild(el("text", {x: L + 6, y: y(r.value) - 5, fill: col}, `${r.label} (${r.value}${suffix})`));
+  (o.refs||[]).forEach(r=>{
+    const col=r.tone==="ok"?"var(--ok)":"var(--warn)",g=el("g",{class:"ref"});
+    g.appendChild(el("line",{x1:L,x2:W-R,y1:y(r.value),y2:y(r.value),stroke:col,"stroke-width":1.2,"stroke-dasharray":"5 4"}));
+    g.appendChild(el("text",{x:L+6,y:y(r.value)-5,fill:col},r.label));
     svg.appendChild(g);
   });
-  target.appendChild(svg);
+  document.getElementById(id).appendChild(svg);
+  if(o.legend){document.getElementById(o.legend).innerHTML=o.series.map((s,k)=>`<span><i style="background:${COL[k]}"></i>${s.name}</span>`).join("");}
 }
+const tierCats=M.tiers.map(t=>`${t.n} (${t.cpu} vCPU, ${t.ram} GB)`);
 
-draw(document.getElementById("lineChart"), "line", ITEMS, KB, 500, 5, " KB",
-  [{value: 100, label: "Still snappy", tone: "success"}, {value: 250, label: "Heavy for mobile", tone: "warning"}]);
-draw(document.getElementById("barChart"), "bar", ITEMS, MS, 5000, 5, " ms",
-  [{value: 300, label: "Feels instant", tone: "success"}, {value: 1000, label: "Noticeable wait", tone: "warning"}]);
+/* ---------- charts ---------- */
+chart("cBrowse",{type:"bar",label:"People browsing at once by server size",cats:tierCats,max:1000,ticks:5,
+  series:[{name:"People browsing at once",data:M.tiers.map(t=>t.browse)}]});
+chart("cAI",{type:"bar",label:"Paw AI users at once by server size",cats:tierCats,max:500,ticks:5,legend:"lAI",
+  series:[{name:"Default Gunicorn workers",data:M.tiers.map(t=>t.aiSync)},{name:`Workers with ${M.threads} threads each`,data:M.tiers.map(t=>t.aiThr)}]});
+const loads=[5,10,15,20,30,40,60,80,100], CLIP=500, svc=M.pageMs;
+chart("cLoad",{type:"line",label:"Page response time against load",cats:loads.map(String),max:CLIP,ticks:5,legend:"lLoad",
+  refs:[{value:200,label:"Still feels fast (200 ms)",tone:"ok"}],
+  series:M.tiers.map(t=>({name:`${t.n}: ${t.cpu} vCPU`,data:loads.map(l=>{const rho=l/(t.cpu*1000/svc);return rho<1?Math.min(CLIP,svc/(1-rho)):CLIP;})}))});
+const stud=[100,500,1000,2000,5000];
+chart("cDb",{type:"line",label:"New database data per semester against students",cats:stud.map(fmt),max:5000,ticks:5,fill:true,
+  series:[{name:"MB per semester",data:stud.map(s=>Math.round(s*mbPerStudent))}]});
+
+/* ---------- tables ---------- */
+const row=(cells,cls)=>`<tr${cls?` class="${cls}"`:""}>${cells.map(c=>`<td>${c}</td>`).join("")}</tr>`;
+const head=cells=>`<thead><tr>${cells.map(c=>`<th>${c}</th>`).join("")}</tr></thead>`;
+
+document.getElementById("assume").innerHTML=head(["Assumption","Value","Why"])+"<tbody>"+[
+  ["Normal page time",M.pageMs+" ms","CPU and database time for one Django page"],
+  ["CPU target",Math.round(M.cpuTarget*100)+"%","Leave room for spikes"],
+  ["Active person",`1 request every ${M.thinkSec} s`,"Reading and clicking between pages"],
+  ["Paw AI call",M.aiSec+" s","Time a worker waits on the outside AI service"],
+  ["Active AI user",M.aiPerUserPerMin+" question a minute","Reading, thinking and typing between answers"],
+  ["Gunicorn workers","2 × vCPU + 1","The usual starting rule"],
+  ["Peak use",`${M.peakPct*100}% of students, ${M.aiPct*100}% of them on Paw AI`,"Busiest moment of a study day"],
+  ["Saved Paw AI data",`${M.qaPerDay} exchanges × ${M.qaKB} KB a day`,"Question, answer and feedback text"]
+].map(r=>row(r)).join("")+"</tbody>";
+
+const T=M.tiers;
+document.getElementById("tiers").innerHTML=head(["", ...T.map(t=>`${t.n}: ${t.cpu} vCPU, ${t.ram} GB`)])+"<tbody>"+[
+  ["Gunicorn workers",...T.map(t=>t.workers)],
+  ["Page requests per second",...T.map(t=>t.rps)],
+  ["People browsing at once",...T.map(t=>fmt(t.browse))],
+  ["Paw AI users at once (default workers)",...T.map(t=>fmt(t.aiSync))],
+  ["Paw AI users at once (with threads)",...T.map(t=>fmt(t.aiThr))],
+  ["Students it can serve (modeled)",...T.map(t=>"about "+fmt(t.maxStudents))],
+  ["Memory in use",...T.map(t=>`${fmt(Math.round(t.ramUsed))} MB (${t.ramPct}%)`)],
+  ["Database connections (workers / with threads)",...T.map(t=>`${t.workers} / ${t.workers*M.threads} of ${M.maxConn}`)]
+].map((r,i)=>row(r,i===5?"ok":"")).join("")+"</tbody>";
+
+function fitTier(peak,ai){
+  for(const t of T){ if(peak<=t.browse && ai<=t.aiSync) return t.n; }
+  for(const t of T){ if(peak<=t.browse && ai<=t.aiThr) return t.n+", with threads"; }
+  return "More than one Large server";
+}
+document.getElementById("fit").innerHTML=head(["Enrolled students","Peak active","Of them on Paw AI","Smallest server that fits"])+"<tbody>"+
+  [200,500,1000,2000,5000,10000].map(n=>{
+    const peak=Math.round(n*M.peakPct), ai=Math.round(peak*M.aiPct), f=fitTier(peak,ai);
+    return row([fmt(n),fmt(peak),fmt(ai),f],f.startsWith("More")?"warn":f.startsWith("Small")?"ok":"info");
+  }).join("")+"</tbody>";
+
+const perVisitMB=(M.firstLoadMB+M.returnMB*(M.visitsPerMonth-1))/M.visitsPerMonth;
+document.getElementById("long").innerHTML=head(["Item","Per student","For 1,000 students"])+"<tbody>"+[
+  ["New Paw AI data, one semester",`${mbPerStudent.toFixed(1)} MB`,`${fmt(Math.round(1000*mbPerStudent))} MB`],
+  ["Paw AI data over 6 semesters",`${(6*mbPerStudent).toFixed(0)} MB`,`${(6*1000*mbPerStudent/1000).toFixed(0)} GB`],
+  ["Traffic per month",`${(M.visitsPerMonth*perVisitMB).toFixed(0)} MB (${M.visitsPerMonth} visits)`,`${(1000*M.visitsPerMonth*perVisitMB/1000).toFixed(0)} GB`]
+].map(r=>row(r)).join("")+`</tbody>`;
+
+/* ---------- header stats and bottom line ---------- */
+const S=T[0];
+document.getElementById("stats").innerHTML=[
+  [`~${fmt(S.maxStudents)}`,"Students the Small server can serve (modeled)","ok"],
+  [fmt(S.aiSync),"Paw AI users at once on the Small server","warn"],
+  [fmt(S.browse),"People browsing at once on the Small server",""],
+  ["500/day","Gmail sending limit, personal account","warn"]
+].map(s=>`<div class="stat ${s[2]}"><b>${s[0]}</b><span>${s[1]}</span></div>`).join("");
+document.getElementById("bottom").textContent=
+  `For a college of about 1,000 students, a Small server (${S.cpu} vCPU, ${S.ram} GB) is enough by this model. The first limits you would reach are the Paw AI wait, the 15 per minute study notes throttle if all students look like one IP, and the Gmail cap of 500 emails a day. A bigger server helps less than those fixes, and the real danger is a single machine without backups.`;
 </script>
 </body>
 </html>
